@@ -1,0 +1,4 @@
+src/
+tsconfig.json
+example-opencode.json
+.gitignore
