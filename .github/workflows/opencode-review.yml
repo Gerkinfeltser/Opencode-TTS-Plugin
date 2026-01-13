@@ -18,14 +18,26 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Get latest opencode version
+        id: version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(gh release view --repo anomalyco/opencode --json tagName --jq .tagName)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Install opencode
+        run: |
+          curl -fsSL https://opencode.ai/install | bash -s -- --version ${{ steps.version.outputs.version }}
+          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+
       - name: Run OpenCode Review
-        uses: anomalyco/opencode/github@latest
+        run: opencode github run
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
-        with:
-          model: zai-coding-plan/glm-4.7
-          prompt: |
+          MODEL: zai-coding-plan/glm-4.7
+          PROMPT: |
             Review this pull request:
             - Check for code quality issues (bugs, style, patterns)
             - Verify TypeScript types and error handling
