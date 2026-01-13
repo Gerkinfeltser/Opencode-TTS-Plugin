@@ -33,3 +33,12 @@ jobs:
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
         with:
           model: zai-coding-plan/glm-4.7
+          prompt: |
+            You are an autonomous coding agent running in a GitHub Action.
+            Follow the instructions in the issue comment.
+
+            IMPORTANT GIT RULES:
+            1. The environment is already on a dedicated branch for this task.
+            2. DO NOT create a new branch (do not use `git checkout -b`).
+            3. Commit your changes directly to the current branch.
+            4. The system handles pushing and PR creation automatically.
