@@ -20,10 +20,10 @@ jobs:
       - name: Run OpenCode Triage
         uses: anomalyco/opencode/github@latest
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
         with:
           model: zai-coding-plan/glm-4.7
+          github_token: ${{ github.token }}
           prompt: |
             You are triaging a new issue. Review the issue and:
 
