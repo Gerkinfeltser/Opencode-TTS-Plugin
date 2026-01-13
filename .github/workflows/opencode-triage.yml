@@ -23,7 +23,6 @@ jobs:
           ZHIPU_API_KEY: ${{ secrets.ZHIPU_API_KEY }}
         with:
           model: zai-coding-plan/glm-4.7
-          use_github_token: true
           prompt: |
             You are triaging a new issue. Review the issue and:
 
