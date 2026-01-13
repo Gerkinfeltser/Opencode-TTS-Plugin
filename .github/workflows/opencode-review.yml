@@ -1,0 +1,35 @@
+name: opencode-review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+      issues: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run OpenCode Review
+        uses: anomalyco/opencode/github@latest
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+        with:
+          model: zai-coding-plan/glm-4.7
+          prompt: |
+            Review this pull request:
+            - Check for code quality issues (bugs, style, patterns)
+            - Verify TypeScript types and error handling
+            - Ensure it follows the project's conventions
+            - Look for missing tests or test coverage gaps
+            - Check for potential security issues
+            - Suggest improvements when applicable
+
+            Be constructive and specific. If the PR looks good, briefly confirm.

@@ -1,0 +1,37 @@
+name: Issue Triage
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run OpenCode Triage
+        uses: anomalyco/opencode/github@latest
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+        with:
+          model: zai-coding-plan/glm-4.7
+          prompt: |
+            You are triaging a new issue. Review the issue and:
+
+            1. **Understand the problem**: Summarize what the issue is about
+            2. **Assess clarity**: If anything is unclear, ask specific questions
+            3. **Categorize**: Determine if it's a bug, feature request, or question
+            4. **Suggest fixes**: If there's an obvious solution, outline the fix approach
+            5. **Reproduce**: For bug reports, try to identify reproduction steps
+
+            If the issue is unclear or needs more information, ask clarifying questions.
+            If it's a bug with a clear fix, propose the solution.
+            If it's a feature request, assess feasibility and suggest an implementation approach.
