@@ -7,7 +7,7 @@ import type { TtsConfig } from "./types"
 import { cancelHttpSpeak, checkHttpServer, isHttpReady, speakHttp } from "./engine-http"
 import { cancelKokoroSpeak, checkKokoroServer, isKokoroReady, speakKokoro } from "./engine-kokoro"
 import { cancelOpenedAISpeak, checkOpenedAIServer, isOpenedAIReady, speakOpenedAI } from "./engine-openedai"
-import { cancelLocalSpeak, initLocalTts, interruptLocalSpeak, isLocalReady, speakLocal } from "./local"
+import { cancelLocalSpeak, initLocalTts, interruptLocalSpeak, isLocalReady, speakLocal, type ToastClient } from "./local"
 
 export async function initTts(config: TtsConfig): Promise<boolean> {
   switch (config.backend) {
@@ -22,15 +22,15 @@ export async function initTts(config: TtsConfig): Promise<boolean> {
   }
 }
 
-export async function speak(text: string, config: TtsConfig): Promise<void> {
+export async function speak(text: string, config: TtsConfig, client?: ToastClient): Promise<void> {
   switch (config.backend) {
     case "kokoro":
       try {
-        await speakKokoro(text, config)
+        await speakKokoro(text, config, client)
         return
       } catch (error) {
         if (config.fallbackToLocal && isLocalReady()) {
-          await speakLocal(text, config)
+          await speakLocal(text, config, client)
           return
         }
         throw error
@@ -38,11 +38,11 @@ export async function speak(text: string, config: TtsConfig): Promise<void> {
 
     case "openedai":
       try {
-        await speakOpenedAI(text, config)
+        await speakOpenedAI(text, config, client)
         return
       } catch (error) {
         if (config.fallbackToLocal && isLocalReady()) {
-          await speakLocal(text, config)
+          await speakLocal(text, config, client)
           return
         }
         throw error
@@ -50,18 +50,18 @@ export async function speak(text: string, config: TtsConfig): Promise<void> {
 
     case "http":
       try {
-        await speakHttp(text, config)
+        await speakHttp(text, config, client)
         return
       } catch (error) {
         if (config.fallbackToLocal && isLocalReady()) {
-          await speakLocal(text, config)
+          await speakLocal(text, config, client)
           return
         }
         throw error
       }
 
     default:
-      await speakLocal(text, config)
+      await speakLocal(text, config, client)
   }
 }
 

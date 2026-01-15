@@ -7,7 +7,7 @@
 import { unlink } from "fs/promises"
 import { tmpdir } from "os"
 import { join } from "path"
-import { cancelAudioPlayback, playAudio } from "./local/audio"
+import { cancelAudioPlayback, playAudio, type ToastClient } from "./local/audio"
 import { splitTextIntoChunks } from "./text"
 import type { TtsConfig } from "./types"
 
@@ -81,7 +81,7 @@ async function synthesizeChunk(
   return audioPath
 }
 
-export async function speakHttp(text: string, config: TtsConfig): Promise<void> {
+export async function speakHttp(text: string, config: TtsConfig, client?: ToastClient): Promise<void> {
   if (!config.enabled) return
   const trimmed = text.trim()
   if (!trimmed) return
@@ -121,7 +121,7 @@ export async function speakHttp(text: string, config: TtsConfig): Promise<void> 
       files.push(audioPath)
 
       if (token !== cancelToken) break
-      await playAudio(audioPath)
+      await playAudio(audioPath, client)
     }
   }
 

@@ -1,6 +1,7 @@
 /**
  * Writes WAV audio to temp files and plays it through system players.
  * Tracks the active player process so playback can be interrupted.
+ * Uses cascading fallbacks prioritizing OS-bundled tools, then common third-party options.
  */
 
 import { tmpdir } from "os"
@@ -8,6 +9,20 @@ import { join } from "path"
 import type { Subprocess } from "bun"
 
 let currentProcess: Subprocess | null = null
+let lastWorkingPlayer: string | null = null
+
+export type ToastClient = {
+  tui: {
+    showToast: (options: {
+      body: {
+        title?: string
+        message: string
+        variant: "info" | "success" | "warning" | "error"
+        duration?: number
+      }
+    }) => Promise<any>
+  }
+}
 
 export async function writeTempWav(samples: Float32Array, sampleRate: number, index: number): Promise<string> {
   const filePath = join(tmpdir(), `opencode-tts-${Date.now()}-${index}.wav`)
@@ -15,29 +30,119 @@ export async function writeTempWav(samples: Float32Array, sampleRate: number, in
   return filePath
 }
 
-export async function playAudio(filePath: string): Promise<void> {
+export async function playAudio(filePath: string, client?: ToastClient): Promise<void> {
   const platform = process.platform
 
+  // macOS fallbacks: afplay (built-in) → ffplay
   if (platform === "darwin") {
-    await runCommand(["afplay", filePath])
-    return
+    const players = [
+      { cmd: ["afplay", filePath], name: "afplay" },
+      { cmd: ["ffplay", "-autoexit", "-nodisp", "-loglevel", "quiet", filePath], name: "ffplay" },
+    ]
+    return await tryPlayers(players, platform, client)
+  }
+
+  // Windows fallbacks: Media.SoundPlayer (built-in, strict) → ffplay (permissive) → wmplayer
+  if (platform === "win32") {
+    const players = [
+      {
+        cmd: ["powershell", "-c", `(New-Object Media.SoundPlayer '${filePath}').PlaySync()`],
+        name: "Media.SoundPlayer"
+      },
+      {
+        cmd: ["ffplay", "-autoexit", "-nodisp", "-loglevel", "quiet", filePath],
+        name: "ffplay"
+      },
+      {
+        cmd: ["wmplayer", "/close", "/prefetch:1", filePath],
+        name: "Windows Media Player"
+      },
+    ]
+    return await tryPlayers(players, platform, client)
+  }
+
+  // Linux fallbacks: paplay (PulseAudio) → aplay (ALSA) → mpv → ffplay
+  const players = [
+    { cmd: ["paplay", filePath], name: "paplay" },
+    { cmd: ["aplay", filePath], name: "aplay" },
+    { cmd: ["mpv", "--no-video", "--no-terminal", filePath], name: "mpv" },
+    { cmd: ["ffplay", "-autoexit", "-nodisp", "-loglevel", "quiet", filePath], name: "ffplay" },
+  ]
+  return await tryPlayers(players, platform, client)
+}
+
+async function tryPlayers(
+  players: Array<{ cmd: string[]; name: string }>,
+  platform: string,
+  client?: ToastClient
+): Promise<void> {
+  // Try last working player first (cache hit)
+  if (lastWorkingPlayer) {
+    const cached = players.find(p => p.name === lastWorkingPlayer)
+    if (cached) {
+      const status = await runCommand(cached.cmd)
+      if (status === 0) return
+      // Cache miss - reset and try all players
+      lastWorkingPlayer = null
+    }
+  }
+
+  // Try each player in order
+  const errors: string[] = []
+  for (const player of players) {
+    const status = await runCommand(player.cmd)
+    if (status === 0) {
+      lastWorkingPlayer = player.name
+      return
+    }
+    errors.push(player.name)
+  }
+
+  // All players failed - show helpful error message
+  const errorMsg = getInstallHelp(platform, errors)
+  if (client?.tui) {
+    try {
+      await client.tui.showToast({
+        body: {
+          title: "TTS Audio Playback Failed",
+          message: errorMsg,
+          variant: "error",
+          duration: 8000,
+        },
+      })
+    } catch {
+      // Ignore toast errors - TUI may not be available
+    }
+  }
+  throw new Error(`All audio players failed: ${errors.join(", ")}`)
+}
+
+function getInstallHelp(platform: string, failedPlayers: string[]): string {
+  if (platform === "darwin") {
+    if (failedPlayers.includes("ffplay")) {
+      return "TTS audio failed. Install ffmpeg: brew install ffmpeg"
+    }
+    return "TTS audio playback failed. Try: brew install ffmpeg"
   }
 
   if (platform === "win32") {
-    await runCommand(["powershell", "-c", `(New-Object Media.SoundPlayer '${filePath}').PlaySync()`])
-    return
+    if (failedPlayers.includes("ffplay")) {
+      return "TTS audio failed. Install ffmpeg: winget install ffmpeg"
+    }
+    return "TTS audio playback failed. Try: winget install ffmpeg.Gyan"
   }
 
-  const players = [
-    ["paplay", filePath],
-    ["aplay", filePath],
-    ["mpv", "--no-video", "--no-terminal", filePath],
-  ]
-
-  for (const cmd of players) {
-    const status = await runCommand(cmd)
-    if (status === 0) return
+  if (platform === "linux") {
+    if (failedPlayers.includes("paplay") && failedPlayers.includes("aplay")) {
+      return "TTS audio failed. Install: sudo apt install pulseaudio-utils alsa-utils"
+    }
+    if (failedPlayers.includes("ffplay") && failedPlayers.includes("mpv")) {
+      return "TTS audio failed. Install: sudo apt install ffmpeg"
+    }
+    return "TTS audio playback failed. Install: sudo apt install pulseaudio-utils alsa-utils ffmpeg"
   }
+
+  return "TTS audio playback failed. Install ffmpeg or a system audio player"
 }
 
 export function cancelAudioPlayback(): void {

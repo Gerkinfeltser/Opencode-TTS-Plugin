@@ -6,7 +6,7 @@
 import { unlink } from "fs/promises"
 import { splitTextIntoChunks } from "../text"
 import { AVAILABLE_VOICES, type TtsConfig, type VoiceName } from "../types"
-import { cancelAudioPlayback, playAudio, writeTempWav } from "./audio"
+import { cancelAudioPlayback, playAudio, writeTempWav, type ToastClient } from "./audio"
 import { loadLocalModel, type KokoroModel } from "./model"
 import { createWorkerPool, type WorkerPool } from "./pool"
 import { isValidVoice } from "./validate"
@@ -63,7 +63,11 @@ export function interruptLocalSpeak(): void {
   cancelAudioPlayback()
 }
 
-export async function speakLocal(text: string, config: TtsConfig): Promise<void> {
+export async function speakLocal(
+  text: string,
+  config: TtsConfig,
+  client?: ToastClient
+): Promise<void> {
   if (!config.enabled) return
   const trimmed = text.trim()
   if (!trimmed) return
@@ -92,7 +96,7 @@ export async function speakLocal(text: string, config: TtsConfig): Promise<void>
         const filePath = await writeTempWav(samples, 24000, i)
         files.push(filePath)
         if (!config.enabled || token !== cancelToken) break
-        await playAudio(filePath)
+        await playAudio(filePath, client)
       }
     }
 
@@ -115,7 +119,7 @@ export async function speakLocal(text: string, config: TtsConfig): Promise<void>
       const result = await tasks[i]
       files.push(result.path)
       if (!config.enabled || token !== cancelToken) break
-      await playAudio(result.path)
+      await playAudio(result.path, client)
     }
   }
 

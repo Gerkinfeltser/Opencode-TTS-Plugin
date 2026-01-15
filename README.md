@@ -62,16 +62,35 @@ export const DEFAULT_CONFIG: TtsConfig = {
 
 ### System Compatibility
 
-- **Linux** - Omarchy tested
-- **macOS** / **Windows** - theoretical but untested
+- **Linux** - Tested on Omarchy
+- **macOS** - Should work (afplay built-in)
+- **Windows** - Should work (PowerShell built-in, ffmpeg recommended)
 
 ### Audio Player
 
-The plugin needs an audio player to play the generated speech:
+The plugin uses cascading fallbacks to find an available audio player. It tries OS-bundled tools first, then common third-party options:
 
-- **Linux**: `paplay` (PulseAudio), `aplay` (ALSA), or `mpv`
-- **macOS**: `afplay` (built-in)
-- **Windows**: PowerShell (built-in)
+**Linux (tried in order):**
+1. `paplay` (PulseAudio - most common)
+2. `aplay` (ALSA - fallback)
+3. `mpv` (if installed)
+4. `ffplay` (from ffmpeg - most compatible with HTTP engine)
+
+**macOS (tried in order):**
+1. `afplay` (built-in - always available)
+2. `ffplay` (from ffmpeg - if installed)
+
+**Windows (tried in order):**
+1. `Media.SoundPlayer` (PowerShell built-in - strict WAV format)
+2. `ffplay` (from ffmpeg - recommended for HTTP engine)
+3. `wmplayer` (Windows Media Player - if installed)
+
+**Note on HTTP/GPU mode:** The HTTP engine returns WAV files that may not play with Windows' built-in Media.SoundPlayer. Installing ffmpeg is strongly recommended for Windows users using the HTTP backend.
+
+**Installation:**
+- **macOS**: `brew install ffmpeg`
+- **Windows**: `winget install ffmpeg` (or `winget install ffmpeg.Gyan`)
+- **Linux**: `sudo apt install ffmpeg`
 
 ### For HTTP/GPU Mode
 

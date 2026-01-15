@@ -158,15 +158,15 @@ export const TtsReaderPlugin: Plugin = async ({ client }) => {
       cancelTts(config)
     }
 
-      if (config.enabled) {
-        if (backendChanged || maxWorkersChanged || httpUrlChanged) {
-          cancelTts(config)
-          resetHttpCheck()
-          resetOpenedAICheck()
-          resetKokoroCheck()
-        }
-        await initTts(config)
+    if (config.enabled) {
+      if (backendChanged || maxWorkersChanged || httpUrlChanged) {
+        cancelTts(config)
+        resetHttpCheck()
+        resetOpenedAICheck()
+        resetKokoroCheck()
       }
+      await initTts(config)
+    }
 
     if (config.enabled && latestMessageID && latestMessageText && lastSpokenMessageID !== latestMessageID) {
       void speakText(latestMessageID, latestMessageText)
@@ -204,7 +204,7 @@ export const TtsReaderPlugin: Plugin = async ({ client }) => {
 
     if (cleanText.length === 0) return
     try {
-      await speak(cleanText, config)
+      await speak(cleanText, config, client)
     } catch (e) {
       await client.tui.showToast({
         body: {
