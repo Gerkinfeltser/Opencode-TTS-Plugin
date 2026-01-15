@@ -5,7 +5,7 @@
 
 import { unlink } from "fs/promises"
 import type { TtsConfig } from "../types"
-import { cancelAudioPlayback, playAudio, writeTempWav } from "./audio"
+import { cancelAudioPlayback, playAudio, writeTempWav, type ToastClient } from "./audio"
 import { loadLocalModel, type KokoroModel } from "./model"
 import { createWorkerPool, type WorkerPool } from "./pool"
 
@@ -61,7 +61,11 @@ export function interruptLocalSpeak(): void {
   cancelAudioPlayback()
 }
 
-export async function speakLocal(text: string, config: TtsConfig): Promise<void> {
+export async function speakLocal(
+  text: string,
+  config: TtsConfig,
+  client?: { tui: { showToast: (options: any) => any } }
+): Promise<void> {
   if (!config.enabled) return
   const trimmed = text.trim()
   if (!trimmed) return
@@ -99,7 +103,7 @@ export async function speakLocal(text: string, config: TtsConfig): Promise<void>
         if (!config.enabled || token !== cancelToken) {
           break
         }
-        await playAudio(filePath)
+        await playAudio(filePath, client)
       }
     }
 
@@ -126,7 +130,7 @@ export async function speakLocal(text: string, config: TtsConfig): Promise<void>
       if (!config.enabled || token !== cancelToken) {
         break
       }
-      await playAudio(result.path)
+      await playAudio(result.path, client)
     }
   }
 

@@ -5,7 +5,7 @@
 
 import type { TtsConfig } from "./types"
 import { checkHttpServer, isHttpReady, speakHttp } from "./engine-http"
-import { cancelLocalSpeak, initLocalTts, interruptLocalSpeak, isLocalReady, speakLocal } from "./local"
+import { cancelLocalSpeak, initLocalTts, interruptLocalSpeak, isLocalReady, speakLocal, type ToastClient } from "./local"
 
 export async function initTts(config: TtsConfig): Promise<boolean> {
   if (config.backend === "http") {
@@ -14,12 +14,12 @@ export async function initTts(config: TtsConfig): Promise<boolean> {
   return initLocalTts(config)
 }
 
-export async function speak(text: string, config: TtsConfig): Promise<void> {
+export async function speak(text: string, config: TtsConfig, client?: ToastClient): Promise<void> {
   if (config.backend === "http") {
-    await speakHttp(text, config)
+    await speakHttp(text, config, client)
     return
   }
-  await speakLocal(text, config)
+  await speakLocal(text, config, client)
 }
 
 export function isReady(config: TtsConfig): boolean {

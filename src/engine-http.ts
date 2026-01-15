@@ -5,7 +5,7 @@
 
 import { tmpdir } from "os"
 import { join } from "path"
-import { playAudio } from "./local/audio"
+import { playAudio, type ToastClient } from "./local/audio"
 import type { TtsConfig } from "./types"
 
 let serverAvailable = false
@@ -23,7 +23,7 @@ export async function checkHttpServer(config: TtsConfig): Promise<boolean> {
   return serverAvailable
 }
 
-export async function speakHttp(text: string, config: TtsConfig): Promise<void> {
+export async function speakHttp(text: string, config: TtsConfig, client?: ToastClient): Promise<void> {
   if (!config.enabled) return
   if (!text || text.trim().length === 0) return
 
@@ -46,7 +46,7 @@ export async function speakHttp(text: string, config: TtsConfig): Promise<void> 
   const audioPath = join(tmpdir(), `opencode-tts-${Date.now()}.${ext}`)
 
   await Bun.write(audioPath, audioBuffer)
-  await playAudio(audioPath)
+  await playAudio(audioPath, client)
 }
 
 export function isHttpReady(): boolean {

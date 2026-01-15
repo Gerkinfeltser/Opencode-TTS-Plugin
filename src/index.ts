@@ -130,7 +130,7 @@ export const TtsReaderPlugin: Plugin = async ({ client }) => {
       .trim()
 
     if (cleanText.length === 0) return
-    await speak(cleanText, config)
+    await speak(cleanText, config, client)
   }
 
   return {

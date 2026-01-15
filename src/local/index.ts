@@ -4,3 +4,4 @@
  */
 
 export { cancelLocalSpeak, initLocalTts, interruptLocalSpeak, isLocalReady, speakLocal } from "./speak"
+export type { ToastClient } from "./audio"
