@@ -245,9 +245,19 @@ export const TtsReaderPlugin: Plugin = async ({ client }) => {
         const args = ttsMatch[2] || ""
         await applyTtsCommand(name, normalizeCommandArgs(args))
 
-        // Only switch profiles and ignore from LLM if specifically requested.
-        // tts-on/off MUST reach the model.
+        // Replicate logic from gist: use client.session.prompt for internal messages
+        // tts-on/off MUST reach the model (via the prompt continuation)
+        // tts-profile MUST NOT reach the model (via noReply: true and throwing)
         if (name === "tts-profile") {
+          await client.session.prompt({
+            path: { id: input.sessionID },
+            body: {
+              noReply: true,
+              agent: input.agent,
+              model: input.model,
+              parts: [{ type: "text", text: "TTS profile updated.", ignored: true }],
+            },
+          })
           throw new Error("__TTS_COMMAND_HANDLED__")
         }
       }
