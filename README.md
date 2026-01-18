@@ -33,7 +33,7 @@ Add the path manually to your `opencode.json`, pointing at wherever you copied t
 }
 ```
 
-Copy the `command` folder to `.opencode/command/` - global or project-specific.
+The built-in slash commands are registered directly by the plugin at startup.
 
 On first use, the plugin downloads the Kokoro TTS model (~87MB). You'll see a toast notification when ready.
 
@@ -106,7 +106,7 @@ You can switch between defined profiles at runtime using the `/tts-profile` comm
 /tts-profile kokoro-gpu
 ```
 
-The plugin dynamically reloads command instructions from `.opencode/command/tts-on.md` if available in your project, or falls back to global/bundled defaults.
+The slash command templates are embedded in the plugin. The markdown files in `command/` are kept as a human-readable reference.
 
 ### Security Considerations
 

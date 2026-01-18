@@ -14,7 +14,7 @@ import { createSessionGuard } from "./session"
 import { normalizeCommandArgs, parseTtsCommand } from "./text"
 import type { TtsConfig } from "./types"
 import { TOAST_DURATIONS } from "./constants"
-import { createCommandHandler, TTS_COMMAND_MARKER, type CommandState } from "./commands"
+import { COMMAND_TEMPLATES, createCommandHandler, TTS_COMMAND_MARKER, type CommandState } from "./commands"
 import { createSpeaker } from "./speaker"
 
 export const TtsReaderPlugin: Plugin = async ({ client }) => {
@@ -96,6 +96,15 @@ export const TtsReaderPlugin: Plugin = async ({ client }) => {
   }, 5000)
 
   return {
+    config: async (input: { command?: Record<string, { template: string; description?: string; agent?: string; model?: string; subtask?: boolean }> }) => {
+      input.command ??= {}
+      for (const [name, definition] of Object.entries(COMMAND_TEMPLATES)) {
+        input.command[name] = {
+          template: definition.template,
+          description: definition.description,
+        }
+      }
+    },
     "chat.message": async (
       input: {
         sessionID: string
