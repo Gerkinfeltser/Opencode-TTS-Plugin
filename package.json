@@ -29,11 +29,12 @@
     "@opencode-ai/plugin": "^1.0.0",
     "@types/bun": "^1.2.0",
     "@types/node": "^22.0.0",
+    "esbuild": "^0.27.2",
     "typescript": "^5.7.0"
   },
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
-    "build": "npm run clean && tsc",
+    "build": "npm run clean && esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --external:kokoro-js --external:@opencode-ai/plugin --external:onnxruntime-node --packages=external && tsc --emitDeclarationOnly",
     "lint": "tsc --noEmit",
     "test": "bun test",
     "prepublishOnly": "npm run build"

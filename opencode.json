@@ -1,5 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": ["CODING-TS.MD"],
-  "plugin": ["file:///home/igorw/Work/opencode-plugins-dev/Opencode-TTS-Plugin/src/index.ts"]
+  "plugin": ["file://D:/git/Opencode-TTS-Plugin/src/index.ts"]
 }
